@@ -3,7 +3,10 @@ API-Clima via localização do IP &amp; localização via pesquisa
 
 ## PROJETO
 Projeto proposto como desafio no curso do professor <a href="https://www.udemy.com/user/ivan-lourenco-gomes/">Ivan Lourenço</a>, cujo o objetivo era pegar informações sobre o clima através de
-4 API's diferentes utilizando jQuery. 
+4 API's diferentes utilizando jQuery.
+
+### ALERTA
+A API exige a localização em tempo real, então baixe o código e execute em sua máquina caso queira fazer o teste
 
 ### API's utilizadas
 <ul>
