@@ -1,28 +1,35 @@
 
 
 $(function(){
-    //https://api.mapbox.com/geocoding/v5/mapbox.places/RioDeJaneiro.json?access_token=pk.eyJ1Ijoia2F3bW9tbyIsImEiOiJjbG1mMGpsNjAwZTl5M29wZnhuZnpteDQzIn0.64JfxlhZagGjgwuWjQxWlQ
+    
+    let latitudeIP
+    let longitudeIP
 
+    $.ajax({
+        url: `http://www.geoplugin.net/json.gp?ip`,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(d) {
+        latitudeIP = d.geoplugin_latitude
+        longitudeIP = d.geoplugin_longitude
+    })
+    setTimeout(() => console.log(latitudeIP), 200)
 
 // *** APIs ***
 // old API -> xGPGMy7n1dTmG3ErdBUPedrGgJm2iXFf
-// clima, previsão 12 horas e previsão 5 dias: https://developer.accuweather.com/apis
-// pegar coordenadas do IP: http://www.geoplugin.net
-let latitudeIP = geoplugin_latitude()
-let longitudeIP = geoplugin_longitude()
-let daysBrazilian = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sabado']
 
+let daysBrazilian = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sabado']
 
 /*INFORMAÇÃO TEMPERATURA */
 function info(dado) {
 
     let getKey = dado.Key
+
     //Contage Temp Each Day
     let dias = $('.dayname')
     let dataToday = new Date()
     let getDateN = dataToday.getDay()
     let ctgDate = 0
-    let copyArr = []
 
     //getTemperature
     $.ajax({
@@ -34,14 +41,11 @@ function info(dado) {
             let maxTemp = d.Temperature.Maximum.Value
             return FtoCelsius(maxTemp)
         })
-
+        
         const getDailyForecastsMin = data.DailyForecasts.map(d => {
             let minTemp = d.Temperature.Minimum.Value
             return FtoCelsius(minTemp)
         })
-
-        // let dateToday = [getDailyForecastsMin[0], getDailyForecastsMax[0]]
-        // console.log(copyArr)
         
         //text html
         $('#texto_temperatura').html(`${getDailyForecastsMax[0]}ºC`)
@@ -80,7 +84,6 @@ function info(dado) {
         console.log('erro na requisição 12horas')
     })
     setTimeout(() => graphicFunction(getHoursAndTemp), 500)
-
    
     $('#local').change(function() {
         let resultCity = $('#local').val()
@@ -114,9 +117,10 @@ function info(dado) {
     }
 }
 
-
 /* API LOCALIZAÇÃO VIA LOCALIZAÇÃO GEOGRAFIA */
 function getGeo(cb) {
+    setTimeout(() => {
+        console.log(latitudeIP)
         $.ajax({
             url: `http://dataservice.accuweather.com/locations/v1/cities/geoposition/search?apikey=yt4IZAd7OWSqytscGy5K1oAfyNzHFBGo&q=${latitudeIP}%2C%20${longitudeIP}`,
             type: 'GET',
@@ -128,7 +132,7 @@ function getGeo(cb) {
         .fail(() => {
             console.log('erro na requisição latitude e longitude')
         })
-        
+    }, 500)
 }
 
 
@@ -203,13 +207,7 @@ function dateState(dado) {
 
 getGeo(dateState)
 getGeo(info)
-
-
-
-
-// pegar coordenadas geográficas pelo nome da cidade: https://docs.mapbox.com/api/
-
-// gerar gráficos em JS: https://www.highcharts.com/demo
+//ilyhm
 
 
 
