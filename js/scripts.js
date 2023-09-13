@@ -1,0 +1,216 @@
+
+
+$(function(){
+    //https://api.mapbox.com/geocoding/v5/mapbox.places/RioDeJaneiro.json?access_token=pk.eyJ1Ijoia2F3bW9tbyIsImEiOiJjbG1mMGpsNjAwZTl5M29wZnhuZnpteDQzIn0.64JfxlhZagGjgwuWjQxWlQ
+
+
+// *** APIs ***
+// old API -> xGPGMy7n1dTmG3ErdBUPedrGgJm2iXFf
+// clima, previsão 12 horas e previsão 5 dias: https://developer.accuweather.com/apis
+// pegar coordenadas do IP: http://www.geoplugin.net
+let latitudeIP = geoplugin_latitude()
+let longitudeIP = geoplugin_longitude()
+let daysBrazilian = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sabado']
+
+
+/*INFORMAÇÃO TEMPERATURA */
+function info(dado) {
+
+    let getKey = dado.Key
+    //Contage Temp Each Day
+    let dias = $('.dayname')
+    let dataToday = new Date()
+    let getDateN = dataToday.getDay()
+    let ctgDate = 0
+    let copyArr = []
+
+    //getTemperature
+    $.ajax({
+        url: `http://dataservice.accuweather.com/forecasts/v1/daily/5day/${getKey}?apikey=yt4IZAd7OWSqytscGy5K1oAfyNzHFBGo`,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(data) {
+        const getDailyForecastsMax = data.DailyForecasts.map(d => {
+            let maxTemp = d.Temperature.Maximum.Value
+            return FtoCelsius(maxTemp)
+        })
+
+        const getDailyForecastsMin = data.DailyForecasts.map(d => {
+            let minTemp = d.Temperature.Minimum.Value
+            return FtoCelsius(minTemp)
+        })
+
+        // let dateToday = [getDailyForecastsMin[0], getDailyForecastsMax[0]]
+        // console.log(copyArr)
+        
+        //text html
+        $('#texto_temperatura').html(`${getDailyForecastsMax[0]}ºC`)
+        $('#texto_max_min').html(`${getDailyForecastsMin[0]}º / ${getDailyForecastsMax[0]}º`)
+        for(let i = 0; i <= dias.length; i++) {
+            $(dias[i]).html(daysBrazilian[getDateN])
+            let maxMin = $('.max_min_temp')[i]
+            if( typeof $(maxMin).attr('id') === 'undefined') {
+                $(maxMin).html(`${getDailyForecastsMin[ctgDate]}º / ${getDailyForecastsMax[ctgDate]}º`)
+                ctgDate++
+            }
+            getDateN++
+        }
+    }).fail(() => {
+        console.log('erro requisição de 5days')
+    })
+    
+    //getHoursAndTemp
+    let getHoursAndTemp;
+    $.ajax({
+        url: `http://dataservice.accuweather.com/forecasts/v1/hourly/12hour/${getKey}?apikey=yt4IZAd7OWSqytscGy5K1oAfyNzHFBGo`,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(data) {
+        getHoursAndTemp = data.map(d => {
+            let selectHours = d.DateTime
+            let selectTemperatureDay = FtoCelsius(d.Temperature.Value)
+            let myHours = [selectHours[11], selectHours[12]]
+            //Temperature - Hour
+            let arrDatesAndTemperature = [selectTemperatureDay, myHours.join('')]
+
+            return arrDatesAndTemperature
+        })
+        return getHoursAndTemp
+    }).fail(() => {
+        console.log('erro na requisição 12horas')
+    })
+    setTimeout(() => graphicFunction(getHoursAndTemp), 500)
+
+   
+    $('#local').change(function() {
+        let resultCity = $('#local').val()
+        let resultCityUpper = resultCity.split(' ')
+        resultCityUpper.forEach(r =>`${r[0].toUpperCase()}${r.slice(1)}`)
+
+        $.ajax({
+            url: `https://api.mapbox.com/geocoding/v5/mapbox.places/${resultCityUpper}.json?access_token=pk.eyJ1Ijoia2F3bW9tbyIsImEiOiJjbG1mMGpsNjAwZTl5M29wZnhuZnpteDQzIn0.64JfxlhZagGjgwuWjQxWlQ`,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(data) {
+            let latitudePesq = data.features[0].center[1]
+            let altidudePesq = data.features[0].center[0]
+
+            latitudeIP = latitudePesq
+            longitudeIP = altidudePesq
+            setTimeout(() => {
+                $('.refresh-loader').css('display', 'block')
+                getGeo(dateState)
+                getGeo(info)
+            }, 250)
+
+            setTimeout(() => $('.refresh-loader').css('display', 'none'), 750)
+        }).fail(() => {
+            console.log('erro na requisição buscar cidade')
+        })
+    })
+
+    function FtoCelsius(t) {
+        return ((t-32) / 1.8).toFixed()
+    }
+}
+
+
+/* API LOCALIZAÇÃO VIA LOCALIZAÇÃO GEOGRAFIA */
+function getGeo(cb) {
+        $.ajax({
+            url: `http://dataservice.accuweather.com/locations/v1/cities/geoposition/search?apikey=yt4IZAd7OWSqytscGy5K1oAfyNzHFBGo&q=${latitudeIP}%2C%20${longitudeIP}`,
+            type: 'GET',
+            dataType: 'json'
+        })
+        .done(function(data) {
+            return cb(data)
+            })
+        .fail(() => {
+            console.log('erro na requisição latitude e longitude')
+        })
+        
+}
+
+
+
+async function graphicFunction(hour) {
+    let setHour = hour.map(x => x[1])
+    let setTemp = hour.map(x => +x[0])
+    await Highcharts.chart('container', {
+
+        title: {
+            text: 'Temperatura hora a hora',
+            align: 'center'
+        },
+    
+    
+        yAxis: {
+            title: {
+                text: 'Number of Employees'
+            }
+        },
+    
+        xAxis: {
+            accessibility: {
+                rangeDescription: `Range: ${setHour[0]} to ${setHour[setHour.length - 1]}`
+            }
+        },
+    
+        legend: {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'middle'
+        },
+    
+        plotOptions: {
+            series: {
+                label: {
+                    connectorAllowed: false
+                },
+                pointStart: +setHour[0]
+            }
+        },
+    
+        series: [ {
+            data: [...setTemp]
+        }],
+    
+        responsive: {
+            rules: [{
+                condition: {
+                    maxWidth: 600
+                },
+                chartOptions: {
+                    legend: {
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom'
+                    }
+                }
+            }]
+        }
+    });
+    
+}
+
+/* CIDADE LOCALIZAÇÃO */
+function dateState(dado) {
+    const city = dado.EnglishName
+    const state = dado.AdministrativeArea.EnglishName
+    const country = dado.Country.LocalizedName
+    $('#texto_local').html(`${city}, ${state}, ${country}`)
+}
+
+getGeo(dateState)
+getGeo(info)
+
+
+
+
+// pegar coordenadas geográficas pelo nome da cidade: https://docs.mapbox.com/api/
+
+// gerar gráficos em JS: https://www.highcharts.com/demo
+
+
+
+});
