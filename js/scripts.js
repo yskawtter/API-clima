@@ -13,7 +13,6 @@ $(function(){
         latitudeIP = d.geoplugin_latitude
         longitudeIP = d.geoplugin_longitude
     })
-    setTimeout(() => console.log(latitudeIP), 200)
 
 // *** APIs ***
 // old API -> xGPGMy7n1dTmG3ErdBUPedrGgJm2iXFf
